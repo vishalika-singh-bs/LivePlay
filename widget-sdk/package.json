@@ -1,0 +1,13 @@
+{
+  "name": "@livePlay/web-sdk",
+  "version": "1.0.0",
+  "main": "src/index.cjs.js",
+  "typings": "src/index.d.ts",
+  "module": "src/index.js",
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "agora-rtc-sdk-ng": "^4.21.0",
+    "agora-rtm-sdk": "^2.1.0",
+    "uuid": "^11.0.3"
+  }
+}

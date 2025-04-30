@@ -1,0 +1,60 @@
+.chat-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1rem;
+}
+.chat-section__info-message{
+  color: black;
+  font-size: 1.6rem;
+}
+
+.messages-container {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-color: #fd27d4 #fd27d4;
+  scrollbar-width: thin;
+  margin-bottom:1rem
+}
+
+.message {
+  max-width: 80%;
+  align-self: flex-start;
+  margin-bottom: 0.4rem;
+}
+
+.message-local .message-header .username {
+  color: #fcfd02;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+  font-size: 2rem;
+}
+
+.username {
+  font-weight: 500;
+  color: #fd27d4;
+  font-weight: bold;
+}
+
+.timestamp {
+  color: #b2b2b2;
+  margin-left: 0.6rem;
+  font-size: 1rem;
+}
+
+.message-content {
+  word-break: break-word;
+  color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin-top: -2px;
+  font-weight: 500;
+}

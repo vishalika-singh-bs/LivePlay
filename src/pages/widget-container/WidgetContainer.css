@@ -1,0 +1,45 @@
+.widget-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+}
+.widget-container.portrait {
+  flex-direction: column; 
+}
+
+.widget-container.landscape {
+  flex-direction: row; 
+}
+
+.video-section,
+.chat-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.widget-container.portrait .video-section {
+  width: 100%;
+  aspect-ratio: 1/1;
+
+}
+
+.widget-container.portrait .chat-section {
+  height: 100%; 
+
+}
+
+.widget-container.landscape .video-section {
+  height: 100%; 
+  aspect-ratio: 1/1;
+}
+
+.widget-container.landscape .chat-section {
+  width: 100%;
+
+}
+
+
+
+

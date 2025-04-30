@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draggable YouTube Video (Mobile Only)</title>
+    <style>
+        body {
+            display: flex;
+            background-color: #8f1677;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .custom-container {
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .video-container {
+            position: relative;
+            height: 100vh;
+            width: 99vw;
+            overflow: hidden;
+        }
+
+        .actions {
+            position: fixed;
+            bottom: 10%;
+            right: 50%;
+        }
+
+        iframe {
+            width: 200px;
+            height: 180px;
+            /* width: 100vw;
+            height: 100vh; */
+            border: none;
+            pointer-events: none; 
+            z-index: 100;
+        }
+
+        .draggable {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: grab;
+        }
+
+        .draggable:active {
+            cursor: grabbing;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            bottom: 0;
+            right: 10%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            opacity: 1;
+            animation: floatUp 3s ease-in forwards;
+            will-change: transform, opacity; /* Optimize for animations */
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -100vh);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-container">
+        <div class="video-container">
+            <!-- YouTube Embed -->
+            <div id="draggableVideo" class="draggable">
+                <iframe id="uniqueIframeId" src="http://localhost:5173/"></iframe>
+            </div>
+        </div>
+        <div id="actions" class="actions">
+            <button onclick="handleToogle()">Toogle</button> <button onclick="handleClose()">X</button>
+        </div>
+    </div>
+
+    <script>
+        var iframeHostedUrl = " http://localhost:5173/";
+        const draggableVideo = document.getElementById('draggableVideo');
+        const iframe = document.getElementById('uniqueIframeId');
+
+
+        // Function to check if the device is a touch device
+        function isTouchDevice() {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+        }
+
+        let status = true;
+        function handleToogle(argument) {
+            iframe.contentWindow.postMessage({ type: 'CYCLE_WIDGET_MODE'}, iframeHostedUrl);
+            if (status) {
+                iframe.style.width = "95px";
+                iframe.style.height = "50px";
+            } else {
+                iframe.style.width = "230px";
+                iframe.style.height = "190px";
+            }
+            status = !status;
+        }
+
+        function handleClose(argument) {
+            if (!status) {
+                return;
+            }
+            iframe.contentWindow.postMessage({ type: 'CYCLE_WIDGET_MODE'}, iframeHostedUrl);
+            iframe.style.width = "95px";
+            iframe.style.height = "50px";
+            status = false;
+        }
+
+        // Functions to call when enabling/disabling pointer-events
+        iframe.contentWindow.postMessage({ type: 'SET_VIDEO_CONTROLS_VISIBILITY', payload: false}, iframeHostedUrl);
+        
+        function activepointer() {
+            console.log("Pointer events enabled");
+            iframe.contentWindow.postMessage({ type: 'SET_VIDEO_CONTROLS_VISIBILITY', payload: true}, iframeHostedUrl);
+        }
+
+        function disablepointer() {
+            console.log("Pointer events disabled");
+            iframe.contentWindow.postMessage({ type: 'SET_VIDEO_CONTROLS_VISIBILITY', payload: false}, iframeHostedUrl);
+        }
+
+        // Only enable drag-and-drop for touch devices
+        if (isTouchDevice()) {
+            let isDragging = false;
+            let offsetX, offsetY;
+            let touchTimer;
+            let touchStartTime;
+
+            draggableVideo.addEventListener('touchstart', (e) => {
+                isDragging = false;
+                touchStartTime = Date.now();
+
+                // Calculate the offset between the touch position and the draggable element's top-left corner
+                const touch = e.touches[0];
+                offsetX = touch.clientX - draggableVideo.getBoundingClientRect().left;
+                offsetY = touch.clientY - draggableVideo.getBoundingClientRect().top;
+
+                // Set a timer to enable pointer-events after a short delay if not dragging
+                touchTimer = setTimeout(() => {
+                    if (!isDragging) {
+                        iframe.style.pointerEvents = 'auto';
+                        activepointer();
+                        
+                        // Set another timer to disable after 5 seconds
+                        setTimeout(() => {
+                            iframe.style.pointerEvents = 'none';
+                            disablepointer();
+                        }, 10000);
+                    }
+                }, 200); // Short delay to detect if it's a drag
+            });
+
+            draggableVideo.addEventListener('touchmove', (e) => {
+                if (!isDragging) {
+                    // If the touch moves significantly, assume it's a drag
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - offsetX;
+                    const dy = touch.clientY - offsetY;
+
+                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                        isDragging = true;
+                        clearTimeout(touchTimer); // Cancel the pointer events activation
+                        iframe.style.pointerEvents = 'none';
+                        disablepointer();
+                    }
+                }
+
+                if (isDragging) {
+                    // Calculate new position for the draggable element
+                    const touch = e.touches[0];
+                    const newLeft = touch.clientX - offsetX;
+                    const newTop = touch.clientY - offsetY;
+
+                    // Ensure the draggable element stays within the container bounds
+                    const containerRect = draggableVideo.parentElement.getBoundingClientRect();
+                    const draggableRect = draggableVideo.getBoundingClientRect();
+
+                    const maxLeft = containerRect.width - draggableRect.width;
+                    const maxTop = containerRect.height - draggableRect.height;
+
+                    draggableVideo.style.left = `${Math.min(Math.max(newLeft, 0), maxLeft)}px`;
+                    draggableVideo.style.top = `${Math.min(Math.max(newTop, 0), maxTop)}px`;
+                }
+            });
+
+            draggableVideo.addEventListener('touchend', () => {
+                clearTimeout(touchTimer);
+                
+                // If it was a very short touch and not dragging, treat as tap
+                if (!isDragging && Date.now() - touchStartTime < 200) {
+                    iframe.style.pointerEvents = 'auto';
+                    activepointer();
+                    
+                    // Disable after 5 seconds
+                    setTimeout(() => {
+                        iframe.style.pointerEvents = 'none';
+                        disablepointer();
+                    }, 5000);
+                }
+                
+                if (isDragging) {
+                    isDragging = false;
+                    draggableVideo.style.cursor = 'grab';
+                }
+            });
+        } else {
+            iframe.style.pointerEvents = 'auto';
+            document.getElementById("actions").style.display = "none"
+            draggableVideo.style.width = "100%";
+            draggableVideo.style.height = "100%";
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+        }
+
+        function createFloatingEmoji(emoji) {
+            const floatingEmoji = document.createElement("div");
+            floatingEmoji.classList.add("floating-emoji");
+            
+            // Create image element
+            const img = document.createElement("img");
+            img.src = emoji;
+            img.alt = ""; // Decorative image doesn't need alt text
+            img.classList.add("floating-emoji-image");
+            floatingEmoji.appendChild(img);
+
+            // Use requestAnimationFrame for smooth rendering
+            requestAnimationFrame(() => {
+                document.body.appendChild(floatingEmoji);
+            });
+
+            floatingEmoji.addEventListener("animationend", () => {
+                floatingEmoji.remove();
+            });
+        }
+
+        const emojiList = {
+            "GOOD_LUCK": "./src/assets/emojis/good_luck.png",
+            "I_VOTE_NO": "./src/assets/emojis/i_vote_no.png",
+            "I_VOTE_YES": "./src/assets/emojis/i_vote_yes.png",
+            "I_WON": "./src/assets/emojis/i_won.png",
+            "I_AM_CONFUSED": "./src/assets/emojis/i_am_confused.png",
+            "I_AM_FOLLOWING": "./src/assets/emojis/i_am_following.png",
+            "LMAO": "./src/assets/emojis/lmao.png",
+            "LOVE_IT": "./src/assets/emojis/love_it.png",
+            "MIND_BLOWING": "./src/assets/emojis/mind_blowing.png",
+            "ON_FIRE": "./src/assets/emojis/on_fire.png",
+            "SHOCKED": "./src/assets/emojis/shocked.png",
+            "WOW": "./src/assets/emojis/wow.png",
+            "YOU_GOT_THIS": "./src/assets/emojis/you_got_this.png",
+            "YOU_ARE_AMAZING": "./src/assets/emojis/you_are_amazing.png"
+        };
+
+        const handleWidgetMessage = (event) => {
+            const data = event.data;
+            console.log('Unknown event type:', JSON.stringify(data));
+
+            if (data.type == 'EMOJI_SELECTED') {
+                const { emoji } = data.payload;
+                if (emojiList[emoji]) {
+                    createFloatingEmoji(emojiList[emoji]);
+                }
+            }
+
+            if (data.type == 'EMOJI_MODEL_OPENED') {
+                const { opened, resize } = data.payload;
+                if (opened) {
+                    iframe.style.width = "330px";
+                } else {
+                    iframe.style.width = "190px";
+                }
+            }
+            if (data.type == 'RESIZE_WIDGET') {
+                const { opened, resize } = data.payload;
+                if (resize === 'expand') {
+                    iframe.style.height = "250px";
+                }
+                if (resize === 'contract') {
+                    iframe.style.height = "auto";
+                }
+            }
+        };
+        window.addEventListener('message', handleWidgetMessage);
+    </script>
+</body>
+</html>

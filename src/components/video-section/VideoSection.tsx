@@ -3,6 +3,7 @@ import { IAgoraRTCRemoteUser, IRemoteVideoTrack } from "agora-rtc-sdk-ng";
 import "./VideoSection.css";
 import { MediaPlayer } from "../media-player/MediaPlayer";
 import { VideoPlayer } from "../video-player/VideoPlayer";
+import { STREAMING_TYPE } from "../../constants/config";
 
 interface VideoSectionProps {
   agoraHost: IAgoraRTCRemoteUser | null;
@@ -56,7 +57,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
               allowToSendEmoji={allowToSendEmoji}
             />
           )}
-          {((agoraHost && !hasVideo) ||!agoraHost ) && 
+          {( STREAMING_TYPE =='AGORA' && ((agoraHost && !hasVideo) ||!agoraHost )) && 
             <VideoPlayer 
               onZoomToggle={onZoomToggle}
               isMobileDevice={isMobileDevice}

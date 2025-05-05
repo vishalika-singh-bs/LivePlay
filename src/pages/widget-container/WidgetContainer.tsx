@@ -18,6 +18,7 @@ import {
   setVideoControlsVisibility 
 } from "../../store/slices/appConfigSlice";
 import "./WidgetContainer.css";
+import { STREAMING_TYPE,AMAZON_REALTIME_STREAMING } from "../../constants/config";
 
 export const WidgetContainer = () => {
   const { videoControlsVisibility, showVideo, showAudio, isChatConnected} = useAppSelector(
@@ -25,7 +26,8 @@ export const WidgetContainer = () => {
   );
   const { audioVolume } = useAppSelector((state) => state.mediaConfig);
   const { userToken } = useAppSelector((state) => state.user);
-
+  const engineType = STREAMING_TYPE === "AMAZON_REALTIME" ? 'ivs' : 'agora';
+  
   const {
     join: joinMedia,
     agoraHost,
@@ -36,7 +38,7 @@ export const WidgetContainer = () => {
     isHostAudioMuted,
     toggleHostAudioMute,
     setAudioVolume,
-  } = useMedia();
+  } = useMedia(engineType);
   const emojiOpenModalTimeoutRef = useRef<number | null>(null);
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false);
   const [isEmojiLocked, setIsEmojiLocked] = useState(false);
@@ -110,6 +112,9 @@ export const WidgetContainer = () => {
   useEffect(() => {
     if (userToken) {
       startChatAndMedia(userToken);
+    }
+    if(STREAMING_TYPE === "AMAZON_REALTIME"){
+      startMedia(AMAZON_REALTIME_STREAMING.participantToken)
     }
   }, [userToken, startChatAndMedia]);
 

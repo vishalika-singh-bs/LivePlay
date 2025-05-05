@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
-import {
+import AgoraRTC, {
   IAgoraRTCRemoteUser,
   IRemoteAudioTrack,
   IRemoteVideoTrack,
+  IAgoraRTCClient
 } from "agora-rtc-sdk-ng";
-import { AgoraRTC, MediaManager } from "@livePlay/web-sdk";
+import { MediaManager } from "@livePlay/web-sdk";
+import {
+  Stage,
+  StageEvents,
+  StageParticipantInfo,
+  RemoteStageStream,
+  StageStream
+} from 'amazon-ivs-web-broadcast';
 
 let mediaManagerInstance: MediaManager | null = null;
 
-const getMediaManager = () => {
+const getMediaManager = (engine: "agora" | "ivs") => {
   if (!mediaManagerInstance) {
-    mediaManagerInstance = new MediaManager();
+    mediaManagerInstance = new MediaManager(engine);
   }
   return mediaManagerInstance;
 };
@@ -18,7 +26,7 @@ const getMediaManager = () => {
  * Custom hook for managing Agora RTC media interactions
  * Handles audio/video tracks, user events, and connection states
  */
-const useMedia = () => {
+const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   const [agoraHost, setAgoraHost] = useState<IAgoraRTCRemoteUser | null>(null);
   const [joinState, setJoinState] = useState("");
   const [clientRole] = useState<string>("host");
@@ -27,13 +35,16 @@ const useMedia = () => {
   const [audioTrack, setAudioTrack] = useState<IRemoteAudioTrack | null>(null);
   const [isHostAudioMuted, setIsHostAudioMuted] = useState<boolean>(false);
   const [isAutoPlayFailed, setIsAutoPlayFailed] = useState<boolean>(false);
-  const mediaInstance = getMediaManager();
+
+  const mediaInstance = getMediaManager(engineType);
+  const mediaClient: IAgoraRTCClient | any = mediaInstance.mediaClient;
+  const client = mediaInstance.ivsClient;
 
   /**
    * Initiates connection to the Agora RTC channel
    * @returns {Promise<void>}
    */
-  const join = useCallback(async (token:string) => {
+  const join = useCallback(async (token: string) => {
     try {
       await mediaInstance.joinRTCChannel(token);
       console.log("Media joined");
@@ -43,7 +54,7 @@ const useMedia = () => {
       setJoinState("FAILED");
       throw error;
     }
-  }, []);
+  }, [mediaInstance]);
 
   /**
    * Subscribes to remote video track
@@ -52,8 +63,9 @@ const useMedia = () => {
    */
   const subscribeVideo = useCallback(
     async (user: IAgoraRTCRemoteUser): Promise<IRemoteVideoTrack> => {
+      if (!mediaClient) throw new Error("Media client is not available for the current engine");
       try {
-        const track = await mediaInstance.mediaClient?.subscribe(user, "video");
+        const track = await mediaClient?.subscribe(user, "video");
         return track;
       } catch (error) {
         console.error("Error subscribing to video:", error);
@@ -70,8 +82,9 @@ const useMedia = () => {
    */
   const unsubscribeVideo = useCallback(
     async (user: IAgoraRTCRemoteUser): Promise<IRemoteVideoTrack> => {
+      if (!mediaClient) throw new Error("Media client is not available for the current engine");
       try {
-        const track = await mediaInstance.mediaClient?.unsubscribe(
+        const track = await mediaClient?.unsubscribe(
           user,
           "video"
         );
@@ -81,7 +94,7 @@ const useMedia = () => {
         throw error;
       }
     },
-    [mediaInstance.mediaClient]
+    [mediaClient]
   );
 
   /**
@@ -92,11 +105,11 @@ const useMedia = () => {
     setJoinState("DISCONNECTED");
     setAgoraHost(null);
     try {
-      await mediaInstance.mediaClient?.leave();
+      await mediaClient?.leave();
     } catch (error) {
       console.error("Error leaving channel:", error);
     }
-  }, []);
+  }, [mediaClient]);
 
   /**
    * Toggles host audio mute state
@@ -119,29 +132,28 @@ const useMedia = () => {
     }
   }, [audioTrack, isAutoPlayFailed]);
 
-    /**
-   * Toggles host audio mute state
-   * Handles autoplay failure recovery and normal mute/unmute operations
-   */
-    const setAudioVolume = useCallback((audioVolume: number) => {
-      if (!audioTrack) return;
-      audioTrack.setVolume(audioVolume);
-    }, [audioTrack]);
+  /**
+ * Toggles host audio mute state
+ * Handles autoplay failure recovery and normal mute/unmute operations
+ */
+  const setAudioVolume = useCallback((audioVolume: number) => {
+    if (!audioTrack) return;
+    audioTrack.setVolume(audioVolume);
+  }, [audioTrack]);
 
   /**
    * Effect hook to handle Agora client events
    * Manages user publishing, unpublishing, and connection events
    */
   useEffect(() => {
-    const client = mediaInstance?.mediaClient;
-    if (!client) return;
+    if (!mediaClient) return;
 
     const handleUserPublished = async (
       user: IAgoraRTCRemoteUser,
       mediaType: "audio" | "video"
     ) => {
       if (mediaType === "audio") {
-        const audioTrack = await mediaInstance.mediaClient?.subscribe(
+        const audioTrack = await mediaClient?.subscribe(
           user,
           mediaType
         );
@@ -180,16 +192,16 @@ const useMedia = () => {
       setAgoraHost(null);
     };
 
-    client.on("user-published", handleUserPublished);
-    client.on("user-unpublished", handleUserUnpublished);
-    client.on("user-joined", handleUserJoined);
-    client.on("user-left", handleUserLeft);
+    mediaClient.on("user-published", handleUserPublished);
+    mediaClient.on("user-unpublished", handleUserUnpublished);
+    mediaClient.on("user-joined", handleUserJoined);
+    mediaClient.on("user-left", handleUserLeft);
 
     return () => {
-      client.off("user-published", handleUserPublished);
-      client.off("user-unpublished", handleUserUnpublished);
-      client.off("user-joined", handleUserJoined);
-      client.off("user-left", handleUserLeft);
+      mediaClient.off("user-published", handleUserPublished);
+      mediaClient.off("user-unpublished", handleUserUnpublished);
+      mediaClient.off("user-joined", handleUserJoined);
+      mediaClient.off("user-left", handleUserLeft);
     };
   }, [mediaInstance?.mediaClient]);
 
@@ -198,11 +210,100 @@ const useMedia = () => {
    * Sets appropriate states when browser blocks autoplay
    */
   useEffect(() => {
-    AgoraRTC.onAutoplayFailed = () => {
-      setIsHostAudioMuted(true);
-      setIsAutoPlayFailed(true);
+    if (engineType === "agora") {
+      AgoraRTC.onAutoplayFailed = () => {
+        setIsHostAudioMuted(true);
+        setIsAutoPlayFailed(true);
+      };
+    }
+  }, [engineType]);
+
+
+  useEffect(() => {
+    if (engineType !== "ivs") return;
+    // Safe cast now
+    // Runtime type check and cast through `unknown`
+    if (!client) return;
+    const ivsStage = client as Stage;
+    
+    const onParticipantJoined = (participant: StageParticipantInfo) => {
+      console.log("[IVS] Participant joined:", participant);
     };
-  }, []);
+
+    const onParticipantLeft = (participant: StageParticipantInfo) => {
+      console.log("[IVS] Participant left:", participant);
+    };
+
+    const onError = (error: Error) => {
+      console.error("[IVS] Connection error:", error);
+    };
+
+    const onStreamsAdded = (
+      participant: StageParticipantInfo,
+      streams: StageStream<any>[]
+    ) => {
+      console.log("[IVS] Streams added for participant:", participant);
+
+      const remoteStreams = streams as RemoteStageStream[];
+
+      remoteStreams.forEach((stream) => {
+        const mediaStream = new MediaStream([stream.mediaStreamTrack]);
+
+        if (stream.mediaStreamTrack.kind === "video") {
+          const videoElement = document.createElement("video");
+          videoElement.srcObject = mediaStream;
+          videoElement.autoplay = true;
+          videoElement.playsInline = true;
+          document.body.appendChild(videoElement);
+          setHasVideo(true);
+        }
+
+        if (stream.mediaStreamTrack.kind === "audio") {
+          const audioElement = document.createElement("audio");
+          audioElement.srcObject = mediaStream;
+          audioElement.autoplay = true;
+          document.body.appendChild(audioElement);
+          setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
+          setHasAudio(true);
+        }
+      });
+    };
+
+    const onStreamsRemoved = (
+      participant: StageParticipantInfo,
+      streams: StageStream<any>[]
+    ) => {
+      console.log("[IVS] Streams removed for participant:", participant);
+      streams.forEach((stream) => {
+        if (stream.mediaStreamTrack.kind === "video") {
+          setHasVideo(false);
+          // Optionally, remove video element if you appended it manually
+          const videos = document.querySelectorAll("video");
+          videos.forEach((v) => v.remove());
+        }
+        if (stream.mediaStreamTrack.kind === "audio") {
+          setHasAudio(false);
+          setAudioTrack(null);
+        }
+      });
+    };
+
+    ivsStage.on(StageEvents.STAGE_PARTICIPANT_JOINED, onParticipantJoined);
+    ivsStage.on(StageEvents.STAGE_PARTICIPANT_LEFT, onParticipantLeft);
+    ivsStage.on(StageEvents.ERROR, onError);
+    ivsStage.on(StageEvents.STAGE_PARTICIPANT_STREAMS_ADDED, onStreamsAdded);
+    ivsStage.on(StageEvents.STAGE_PARTICIPANT_STREAMS_REMOVED, onStreamsRemoved);
+
+
+    return () => {
+      ivsStage.off(StageEvents.STAGE_PARTICIPANT_JOINED, onParticipantJoined);
+      ivsStage.off(StageEvents.STAGE_PARTICIPANT_LEFT, onParticipantLeft);
+      ivsStage.off(StageEvents.ERROR, onError);
+      ivsStage.off(StageEvents.STAGE_PARTICIPANT_STREAMS_ADDED, onStreamsAdded);
+      ivsStage.off(StageEvents.STAGE_PARTICIPANT_STREAMS_REMOVED, onStreamsRemoved);
+    };
+  }, [engineType, client]);
+
 
   return {
     join,

@@ -57,7 +57,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
               allowToSendEmoji={allowToSendEmoji}
             />
           )}
-          {( STREAMING_TYPE =='AGORA' && ((agoraHost && !hasVideo) ||!agoraHost )) && 
+          {( STREAMING_TYPE !='AMAZON_REALTIME' && ((agoraHost && !hasVideo) ||!agoraHost )) && 
             <VideoPlayer 
               onZoomToggle={onZoomToggle}
               isMobileDevice={isMobileDevice}

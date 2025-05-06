@@ -31,6 +31,7 @@ export const WidgetContainer = () => {
   const {
     join: joinMedia,
     agoraHost,
+    videoTrack,
     subscribeVideo,
     joinState,
     hasVideo,
@@ -201,6 +202,7 @@ export const WidgetContainer = () => {
       {showVideo && (
         <VideoSection
           agoraHost={agoraHost}
+          videoTrack={videoTrack}
           subscribeVideo={subscribeVideo}
           joinState={joinState}
           hasVideo={hasVideo}

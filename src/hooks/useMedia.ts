@@ -40,6 +40,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   const mediaInstance = getMediaManager(engineType);
   const mediaClient: IAgoraRTCClient | any = mediaInstance.mediaClient;
   const client = mediaInstance.ivsClient;
+  const [videoTrack, setVideoTrack] = useState<MediaStreamTrack | null>(null);
 
   /**
    * Initiates connection to the Agora RTC channel
@@ -249,24 +250,19 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
 
       remoteStreams.forEach((stream) => {
         const mediaStream = new MediaStream([stream.mediaStreamTrack]);
-
+    
         if (stream.mediaStreamTrack.kind === "video") {
-          const videoElement = document.createElement("video");
-          videoElement.srcObject = mediaStream;
-          videoElement.autoplay = true;
-          videoElement.playsInline = true;
-          videoElement.muted = true; 
-          document.body.appendChild(videoElement);
-          setHasVideo(true);
+          setVideoTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
+          setHasVideo(true);    
         }
 
         if (stream.mediaStreamTrack.kind === "audio") {
           const audioElement = document.createElement("audio");
           audioElement.srcObject = mediaStream;
           audioElement.autoplay = true;
-          document.body.appendChild(audioElement);
           setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
           setHasAudio(true);
+          setIsHostAudioMuted(true)
         }
       });
     };
@@ -279,6 +275,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       streams.forEach((stream) => {
         if (stream.mediaStreamTrack.kind === "video") {
           setHasVideo(false);
+          setVideoTrack(null)
           // Optionally, remove video element if you appended it manually
           const videos = document.querySelectorAll("video");
           videos.forEach((v) => v.remove());
@@ -336,6 +333,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
     setAudioVolume,
     hasAudio,
     isHostAudioMuted,
+    videoTrack
   };
 };
 

@@ -4,6 +4,8 @@ import "./VideoSection.css";
 import { MediaPlayer } from "../media-player/MediaPlayer";
 import { VideoPlayer } from "../video-player/VideoPlayer";
 import { STREAMING_TYPE } from "../../constants/config";
+import { StreamType } from "amazon-ivs-web-broadcast";
+import { StreamingType } from "../../constants/config";
 
 interface VideoSectionProps {
   agoraHost: IAgoraRTCRemoteUser | null;
@@ -19,12 +21,14 @@ interface VideoSectionProps {
   openEmojiModal: () => void;
   isEmojiLocked: boolean;
   allowToSendEmoji: boolean;
+  videoTrack:any;
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({
   agoraHost,
   joinState,
   hasVideo,
+  videoTrack,
   subscribeVideo,
   unsubscribeVideo,
   isHostAudioMuted,
@@ -40,11 +44,11 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     <div className="video-section">
       <div className="video-inner-container">
         <div className="video-placeholder">
-          {joinState === "CONNECTED" && agoraHost && hasVideo && (
+          {((joinState === "CONNECTED" && agoraHost && hasVideo) || (STREAMING_TYPE == 'AMAZON_REALTIME')) && (
             <MediaPlayer
               user={agoraHost}
               hasVideo={hasVideo}
-              videoTrack={agoraHost.videoTrack}
+              videoTrack={videoTrack}
               subscribeVideo={subscribeVideo}
               unsubscribeVideo={unsubscribeVideo}
               isHostAudioMuted={isHostAudioMuted}

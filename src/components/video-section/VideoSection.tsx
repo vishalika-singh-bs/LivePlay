@@ -4,8 +4,6 @@ import "./VideoSection.css";
 import { MediaPlayer } from "../media-player/MediaPlayer";
 import { VideoPlayer } from "../video-player/VideoPlayer";
 import { STREAMING_TYPE } from "../../constants/config";
-import { StreamType } from "amazon-ivs-web-broadcast";
-import { StreamingType } from "../../constants/config";
 
 interface VideoSectionProps {
   agoraHost: IAgoraRTCRemoteUser | null;

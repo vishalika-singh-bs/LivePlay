@@ -11,7 +11,8 @@ import {
   StageEvents,
   StageParticipantInfo,
   RemoteStageStream,
-  StageStream
+  StageStream,
+  StageParticipantSubscribeState
 } from 'amazon-ivs-web-broadcast';
 
 let mediaManagerInstance: MediaManager | null = null;
@@ -288,11 +289,21 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       });
     };
 
+    const onSubscribeStateChanged = (
+      participant: StageParticipantInfo,
+      state: StageParticipantSubscribeState
+    ): void => {
+      console.log("[IVS] Subscribe state changed for participant:", participant.id);
+      console.log("[IVS] New subscribe state:", state);
+    };
+    
+
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_JOINED, onParticipantJoined);
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_LEFT, onParticipantLeft);
     ivsStage.on(StageEvents.ERROR, onError);
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_STREAMS_ADDED, onStreamsAdded);
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_STREAMS_REMOVED, onStreamsRemoved);
+    ivsStage.on(StageEvents.STAGE_PARTICIPANT_SUBSCRIBE_STATE_CHANGED, onSubscribeStateChanged);
 
 
     return () => {
@@ -301,6 +312,8 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       ivsStage.off(StageEvents.ERROR, onError);
       ivsStage.off(StageEvents.STAGE_PARTICIPANT_STREAMS_ADDED, onStreamsAdded);
       ivsStage.off(StageEvents.STAGE_PARTICIPANT_STREAMS_REMOVED, onStreamsRemoved);
+      ivsStage.off(StageEvents.STAGE_PARTICIPANT_SUBSCRIBE_STATE_CHANGED, onSubscribeStateChanged);
+
     };
   }, [engineType, client]);
 

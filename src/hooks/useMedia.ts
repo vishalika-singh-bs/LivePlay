@@ -243,7 +243,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       participant: StageParticipantInfo,
       streams: StageStream<any>[]
     ) => {
-      console.log("[IVS] Streams added for participant:", participant);
+      console.log("[IVS] Streams added for participant:", participant, streams);
 
       const remoteStreams = streams as RemoteStageStream[];
 
@@ -253,7 +253,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
         if (stream.mediaStreamTrack.kind === "video") {
           const videoElement = document.createElement("video");
           videoElement.srcObject = mediaStream;
-          videoElement.autoplay = true;
+         // videoElement.autoplay = true;
           videoElement.playsInline = true;
           document.body.appendChild(videoElement);
           setHasVideo(true);
@@ -262,7 +262,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
         if (stream.mediaStreamTrack.kind === "audio") {
           const audioElement = document.createElement("audio");
           audioElement.srcObject = mediaStream;
-          audioElement.autoplay = true;
+          //audioElement.autoplay = true;
           document.body.appendChild(audioElement);
           setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
           setHasAudio(true);
@@ -295,6 +295,10 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
     ): void => {
       console.log("[IVS] Subscribe state changed for participant:", participant.id);
       console.log("[IVS] New subscribe state:", state);
+      if (state === StageParticipantSubscribeState.ERRORED) {
+        console.error('[IVS] Subscribe failed for participant:', participant.id);
+        // Implement retry logic or user notification
+      }
     };
     
 

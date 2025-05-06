@@ -10,8 +10,7 @@ import {
   Stage,
   StageEvents,
   StageParticipantInfo,
-  // RemoteStageStream,
-  StreamType,
+  RemoteStageStream,
   StageStream,
   StageParticipantSubscribeState
 } from 'amazon-ivs-web-broadcast';
@@ -144,7 +143,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   }, [audioTrack]);
 
   /**
-   * Effect hook to haStreamTypendle Agora client events
+   * Effect hook to handle Agora client events
    * Manages user publishing, unpublishing, and connection events
    */
   useEffect(() => {
@@ -227,7 +226,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
     // Runtime type check and cast through `unknown`
     if (!client) return;
     const ivsStage = client as Stage;
-
+    
     const onParticipantJoined = (participant: StageParticipantInfo) => {
       console.log("[IVS] Participant joined:", participant);
     };
@@ -245,24 +244,28 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       streams: StageStream<any>[]
     ) => {
       console.log("[IVS] Streams added for participant:", participant, streams);
-      streams.forEach((stream) => {
+
+      const remoteStreams = streams as RemoteStageStream[];
+
+      remoteStreams.forEach((stream) => {
         const mediaStream = new MediaStream([stream.mediaStreamTrack]);
-    
-        if (stream.streamType === StreamType.VIDEO) {
+
+        if (stream.mediaStreamTrack.kind === "video") {
           const videoElement = document.createElement("video");
           videoElement.srcObject = mediaStream;
-          videoElement.playsInline = true;
           videoElement.autoplay = true;
+          videoElement.playsInline = true;
+          videoElement.muted = true; 
           document.body.appendChild(videoElement);
           setHasVideo(true);
         }
-    
-        if (stream.streamType === StreamType.AUDIO) {
+
+        if (stream.mediaStreamTrack.kind === "audio") {
           const audioElement = document.createElement("audio");
           audioElement.srcObject = mediaStream;
           audioElement.autoplay = true;
           document.body.appendChild(audioElement);
-          //setAudioTrack(stream.mediaStreamTrack);
+          setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
           setHasAudio(true);
         }
       });
@@ -298,7 +301,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
         // Implement retry logic or user notification
       }
     };
-
+    
 
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_JOINED, onParticipantJoined);
     ivsStage.on(StageEvents.STAGE_PARTICIPANT_LEFT, onParticipantLeft);

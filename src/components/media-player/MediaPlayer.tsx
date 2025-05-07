@@ -63,6 +63,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         //   console.error("Error playing video:", error);
         // });
 
+        // Remove previous video element if it exists
+        const existingVideo = container.current.querySelector("video");
+        if (existingVideo) {
+          existingVideo.remove();
+        }
+
         container.current.appendChild(videoElement);
       }
 
@@ -89,7 +95,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     setupVideoTrack();
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     setupVideoTrack();
   }, [videoTrack]);
 

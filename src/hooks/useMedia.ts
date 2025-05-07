@@ -137,15 +137,22 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   // toggleHostAudioMute -- changes have been done in this function for ivs
   const toggleHostAudioMute = () => {
     console.log("isAutoPlayFailed", isAutoPlayFailed);
-    console.log("test",audioTrack,isHostAudioMuted)
     if (!audioTrack) return;
     if (isHostAudioMuted) {
       audioTrack.enabled = true;
-      setAudioTrack(audioTrack)
+      const mediaStream = new MediaStream([audioTrack]);
+      const audioElement = document.createElement("audio");
+      audioElement.srcObject = mediaStream;
+      audioElement.autoplay = true;
+      // Remove previous audio element if it exists
+      const existingAudio = document.querySelector("audio");
+      if (existingAudio) {
+        existingAudio.remove();
+      }
+      document.body.appendChild(audioElement);
       setIsHostAudioMuted(false)
     } else {
       audioTrack.enabled = false;
-      setAudioTrack(audioTrack)
       setIsHostAudioMuted(true)
     }
   }

@@ -129,8 +129,13 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       setIsHostAudioMuted(true);
       audioTrack.stop();
     } else {
-      setIsHostAudioMuted(false);
-      audioTrack.play();
+      if(engineType == 'ivs'){
+        console.log(audioTrack,"audioTrack",videoTrack)
+      //  audioTrack.muted =true;
+      }else{
+        setIsHostAudioMuted(false);
+        audioTrack.play();
+      }
     }
   }, [audioTrack, isAutoPlayFailed]);
 

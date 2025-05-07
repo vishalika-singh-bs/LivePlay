@@ -137,6 +137,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   // toggleHostAudioMute -- changes have been done in this function for ivs
   const toggleHostAudioMute = () => {
     console.log("isAutoPlayFailed", isAutoPlayFailed);
+    console.log("test",audioTrack,isHostAudioMuted)
     if (!audioTrack) return;
     if (isHostAudioMuted) {
       audioTrack.enabled = true;

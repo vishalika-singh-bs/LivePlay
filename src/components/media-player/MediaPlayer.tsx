@@ -57,7 +57,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         videoElement.srcObject = mediaStream;
         videoElement.autoplay = true;
         videoElement.playsInline = true;
-       // videoElement.muted = true;
+        videoElement.muted = true;
 
         // videoElement.play().catch((error) => {
         //   console.error("Error playing video:", error);

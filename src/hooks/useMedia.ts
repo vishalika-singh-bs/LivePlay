@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AgoraRTC, {
   IAgoraRTCRemoteUser,
-  IRemoteAudioTrack,
+  // IRemoteAudioTrack,
   IRemoteVideoTrack,
   IAgoraRTCClient
 } from "agora-rtc-sdk-ng";
@@ -136,6 +136,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
 
   // toggleHostAudioMute -- changes have been done in this function for ivs
   const toggleHostAudioMute = () => {
+    console.log("isAutoPlayFailed", isAutoPlayFailed);
     if (!audioTrack) return;
     if (isHostAudioMuted) {
       audioTrack.enabled = true;

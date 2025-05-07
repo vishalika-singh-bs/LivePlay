@@ -33,7 +33,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
   const [clientRole] = useState<string>("host");
   const [hasVideo, setHasVideo] = useState<boolean>(false);
   const [hasAudio, setHasAudio] = useState<boolean>(false);
-  const [audioTrack, setAudioTrack] = useState<IRemoteAudioTrack | null>(null);
+  const [audioTrack, setAudioTrack] = useState<any | null>(null);
   const [isHostAudioMuted, setIsHostAudioMuted] = useState<boolean>(false);
   const [isAutoPlayFailed, setIsAutoPlayFailed] = useState<boolean>(false);
 
@@ -117,27 +117,36 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
    * Toggles host audio mute state
    * Handles autoplay failure recovery and normal mute/unmute operations
    */
-  const toggleHostAudioMute = useCallback(() => {
+  // const toggleHostAudioMute = useCallback(() => {
+  //   if (!audioTrack) return;
+  //   console.log("isAutoPlayFailed", isAutoPlayFailed);
+  //   if (audioTrack.isPlaying && isAutoPlayFailed) {
+  //     setIsAutoPlayFailed(false);
+  //     setIsHostAudioMuted(false);
+  //     return;
+  //   }
+  //   if (audioTrack.isPlaying) {
+  //     setIsHostAudioMuted(true);
+  //     audioTrack.stop();
+  //   } else {
+  //       setIsHostAudioMuted(false);
+  //       audioTrack.play();
+  //   }
+  // }, [audioTrack, isAutoPlayFailed]);
+
+  // toggleHostAudioMute -- changes have been done in this function for ivs
+  const toggleHostAudioMute = () => {
     if (!audioTrack) return;
-    console.log("isAutoPlayFailed", isAutoPlayFailed);
-    if (audioTrack.isPlaying && isAutoPlayFailed) {
-      setIsAutoPlayFailed(false);
-      setIsHostAudioMuted(false);
-      return;
-    }
-    if (audioTrack.isPlaying) {
-      setIsHostAudioMuted(true);
-      audioTrack.stop();
+    if (isHostAudioMuted) {
+      audioTrack.enabled = true;
+      setAudioTrack(audioTrack)
+      setIsHostAudioMuted(false)
     } else {
-      if(engineType == 'ivs'){
-        console.log(audioTrack,"audioTrack",videoTrack)
-      //  audioTrack.muted =true;
-      }else{
-        setIsHostAudioMuted(false);
-        audioTrack.play();
-      }
+      audioTrack.enabled = false;
+      setAudioTrack(audioTrack)
+      setIsHostAudioMuted(true)
     }
-  }, [audioTrack, isAutoPlayFailed]);
+  }
 
   /**
  * Toggles host audio mute state
@@ -254,7 +263,6 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
       const remoteStreams = streams as RemoteStageStream[];
 
       remoteStreams.forEach((stream) => {
-        const mediaStream = new MediaStream([stream.mediaStreamTrack]);
     
         if (stream.mediaStreamTrack.kind === "video") {
           setVideoTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
@@ -262,10 +270,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
         }
 
         if (stream.mediaStreamTrack.kind === "audio") {
-          const audioElement = document.createElement("audio");
-          audioElement.srcObject = mediaStream;
-          audioElement.autoplay = true;
-          audioElement.muted = true;
+          stream.mediaStreamTrack.enabled = false; // Mute (disable) the video track
           setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
           setHasAudio(true);
           setIsHostAudioMuted(true)

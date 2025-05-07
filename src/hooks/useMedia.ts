@@ -260,6 +260,7 @@ const useMedia = (engineType: "agora" | "ivs" = "agora") => {
           const audioElement = document.createElement("audio");
           audioElement.srcObject = mediaStream;
           audioElement.autoplay = true;
+          audioElement.muted = true;
           setAudioTrack(stream.mediaStreamTrack as any); // Replace with stricter type if needed
           setHasAudio(true);
           setIsHostAudioMuted(true)
